@@ -26,7 +26,7 @@ class Keithley():
         
     def read_temp(self):
         resistance = self.read_resistance()
-        local_slope = 1.5/(-1e+3) #1.5 degree per kOhm in neighborhood of 22C, 33 kOhm
-        temp = (resistance-32.71e+3)*local_slope + 23 #44008RC thermistor
+        local_slope = 1/(-1.7e+3) #1 degree per 1.7 kOhm in neighborhood of 22C, 33 kOhm
+        temp = (resistance-40.77e+3)*local_slope + 18 #44008RC thermistor
         return temp, resistance
 

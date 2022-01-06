@@ -29,9 +29,10 @@ class PID:
         prop = k*self.error_value
         integral = k*self.integral_value
         diff = k*(self.current_reading - self.last_reading)*self.params["t_diff"]/self.params["dt"]
+        print([prop, integral, diff])
         return prop + integral + diff + self.params["output_default"]
         
-    def update(self, reading)
+    def update(self, reading):
         self.last_reading = self.current_reading
         self.current_reading = reading
         
@@ -40,5 +41,7 @@ class PID:
            self.error_value = self.params["setpoint"] - self.current_reading
            self.integral_value += self.error_value*self.params["dt"]/self.params["t_int"]
            return self.output_signal()
+        else:
+           return self.params["output_default"]       
             
         
