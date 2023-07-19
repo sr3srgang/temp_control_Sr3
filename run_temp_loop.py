@@ -7,11 +7,9 @@ from Rigol import Rigol
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    PID_params = {"k_prop": -.35, "t_int": 50, "t_diff": 0, "setpoint":19.0,  "dt": 15, "output_default":1.53}
-    #changed params at 9:12 am 
-    #Made even more aggressive at 12:55
-    #Seems to have destabilized-- relaxing slightly more at 12:33
-    #increased derivative term at 5:37
+    #PID_params = {"k_prop": -.35, "t_int": 60, "t_diff": 0, "setpoint":19.2,  "dt": 15, "output_default":2.5, "rails": [1, 5]}
+    #MM 20221227 turned down gain from -.25 to -.2 bc servo was ringing. 
+    PID_params = {"k_prop": -.15, "t_int": 120, "t_diff": 0, "setpoint":19.6,  "dt": 15, "output_default":1.4, "rails": [1, 5]}
     k = Keithley('192.168.1.25', 5025)
     r = Rigol('192.168.1.27', 5555, 2)  
     loop=TempLoop("Laser-side temp loop", k, r, PID_params)
