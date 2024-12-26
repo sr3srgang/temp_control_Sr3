@@ -5,6 +5,10 @@ from PlotWindow import PlotWindow
 import os
 from PID import PID
 
+# libraries for data uploading
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
+
 class TempLoop(QWidget):
     def __init__(self, name, input_device, output_device, PID_params):
         super(TempLoop, self).__init__()
@@ -86,6 +90,14 @@ class TempLoop(QWidget):
         #Log temp and output
         output = self.PID.update(current_temp)
         f_path = self.get_fname_write(time)
+        
+        # send data to yesnuffleupagus
+        # Send to the db
+        with InfluxDBClient(url="http://yesnuffleupagus.colorado.edu:8086", token="yelabtoken", org="yelab", debug=False) as client:
+            write_api = client.write_api(write_options=SYNCHRONOUS)
+            write_api.write("data_logging", "yelab", "Sr3_temp,Channel=1 Value={}".format(current_temp))
+            client.close()
+        
         
         with open(f_path, 'a') as f:
             f.write("{}, {}, {}, {}\n".format(timeDisplay, current_temp, res, output))

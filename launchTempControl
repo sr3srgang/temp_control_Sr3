@@ -1,0 +1,8 @@
+#!/bin/bash
+gnome-terminal --title="temp_control_Sr3" --tab -e "bash -c 'cd /home/srgang/temp_control_Sr3; ./runTempControl; exec bash'"
+
+#echo
+#echo "Press any key to continue..."
+# -s: Do not echo input coming from a terminal
+# -n 1: Read one character
+#read -s -n 1

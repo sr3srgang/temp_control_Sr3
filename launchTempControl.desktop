@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=launchTempControl
+Comment=Blue laser-side HVAC temp feedback control
+#Keywords=
+#Exec=/home/srgang/temp_control_Sr3/launchTempControl
+Exec=gnome-terminal -- bash -i -c "/home/srgang/temp_control_Sr3/launchTempControl"
+Type=Application
+Icon=/home/srgang/temp_control_Sr3/icon_launchTempControl.jpg
+NoDisplay=false

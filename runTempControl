@@ -1,0 +1,20 @@
+#!/bin/bash
+echo "Running turn_on_rigol_12V.py ..."
+echo 
+python3 turn_on_rigol_12V.py
+echo
+echo "turn_on_rigol_12V.py ran successfully."
+
+
+echo "Running run_temp_loop.py ..."
+echo
+python3 run_temp_loop.py
+echo
+echo "Running run_temp_loop.py aborted."
+
+
+echo
+echo "Press any key to continue..."
+# -s: Do not echo input coming from a terminal
+# -n 1: Read one character
+read -s -n 1
