@@ -48,7 +48,10 @@ class TempLoop(QWidget):
         self.loop_time = self.PID_params["dt"]
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_loop)
-        self.timer.start(self.loop_time*1000)
+        self.timer.start(self.loop_time * 1000)
+
+        # Ensure first update happens immediately
+        QTimer.singleShot(100, self.update_loop)
         
         #Setting up data log
         self.day = None

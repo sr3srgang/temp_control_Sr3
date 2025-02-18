@@ -3,11 +3,25 @@ import numpy as np
 
 
 class Keithley():
-
+    """Reading the resistance (and hence the temp) of the thermistor connected to the front-panel input"""
     def __init__(self, ip_address, port):
+        print(f"Connecting to Keithley: {ip_address}:{port}...")
         self.port = port
         self.buffer_size = 2048
         self.ip_address = ip_address
+        
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((self.ip_address, self.port))
+            self.send_msg(s, "*IDN?")
+            response = s.recv(self.buffer_size)
+            print("Connected!")
+            print("\t" + f"\t response: *IDN? = {response}")
+            
+        except Exception as ex:
+            raise ex
+        
+        
     
     def send_msg(self, s, msg):
         encoded = msg.encode('utf-8')
