@@ -11,6 +11,21 @@ class Rigol():
         self.vMin = 1
         self.power_channel = 1 #MM 20221229 check to turn power on if you hit a rail, just in case there was a power blip. 
         self.power_value = 12
+        self.buffer_size = 2048
+        
+        # test connection
+        print(f"Test connection to RIGOL: {ip_address}:{port}...")
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1) # s 
+            s.connect((self.ip_address, self.port))
+            self.send_msg(s, "*IDN?\n")
+            response = s.recv(self.buffer_size)
+            print("Connected!")
+            print(rf"response: *IDN? = {response}")
+            
+        except Exception as ex:
+            raise ex
 	
     def send_msg(self, s, msg):
         encoded = msg.encode('utf-8')
@@ -22,6 +37,7 @@ class Rigol():
             vMax = self.vMax   
         if (V is not None) and (V > self.vMin) and (V < vMax):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1) # s 
             s.connect((self.ip_address, self.port))
         
             set_channel = ':INST CH' + str(channel) +'\n'

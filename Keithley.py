@@ -52,14 +52,15 @@ class Keithley_mux():
     Slot 1 of Keithely DAQ610)"""
     
     def __init__(self, ip_address, port):
-        print(f"Connecting to Keithley: {ip_address}:{port}...")
-        
         self.port = port
         self.buffer_size = 2048
         self.ip_address = ip_address
-       
+
+        # test connection
+        print(f"Test connection to Keithley: {ip_address}:{port}...")
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1) # s 
             s.connect((self.ip_address, self.port))
             self.send_msg(s, "*IDN?\n")
             response = s.recv(self.buffer_size)
@@ -80,6 +81,7 @@ class Keithley_mux():
     def read_resistance(self):
         # print(f"Attemp to read resistance...")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1) # s 
         s.connect((self.ip_address, self.port))
         
         # Updated SCPI commands for CH101 on the 7701 multiplexer
