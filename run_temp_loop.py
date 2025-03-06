@@ -14,7 +14,10 @@ if __name__ == '__main__':
     PID_params = {"k_prop": -.15, "t_int": 120, "t_diff": 0, "setpoint":20.5,  "dt": 15, "output_default":1.53, "rails": [1, 5]}
     # k = Keithley_mux('192.168.1.25', 5025) # for a resister in the front-panel
     k = Keithley_mux('192.168.1.25', 5025) # rear panel
-    r = Rigol('192.168.1.27', 5555, 2)  
+    print()
+    r = Rigol('192.168.1.27', 5555, 2)
+    print()
+    print("Starting servo loop...")
     loop=TempLoop("Laser-side temp loop", k, r, PID_params)
     loop.show()
     sys.exit(app.exec_())
