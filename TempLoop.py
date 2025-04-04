@@ -150,10 +150,22 @@ class TempLoop(QWidget):
                 print(traceback.format_exception(), file=sys.stderr) 
             
             # Send result to influxdb
+            record = {
+                "measurement": "HEPA_servo",
+                "tags": {
+                    "Channel": str(k + 1)
+                },
+                "fields": {
+                    "Temp[degC]": current_temp,
+                    "Output[V]": output,
+                }
+            }
+            
             try:
                 with InfluxDBClient(url="http://yesnuffleupagus.colorado.edu:8086", token="yelabtoken", org="yelab", debug=False) as client:
                     write_api = client.write_api(write_options=SYNCHRONOUS)
-                    write_api.write("data_logging", "yelab", "Sr3_temp,Channel=1 Value={}".format(current_temp))
+                    # write_api.write("data_logging", "yelab", "Sr3_temp,Channel={} Value={}".format(k+1, current_temp))
+                    write_api.write(bucket="sr3", org="yelab", record=record)
             except Exception as ex:
                 print("InfluxDB uploading failed.", file=sys.stderr)
                 print(traceback.format_exception(), file=sys.stderr)
