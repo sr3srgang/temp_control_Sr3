@@ -53,14 +53,19 @@ class PlotWindow(QDialog):
         height = self.nav.height() + self.canvas.height()
         self.setFixedSize(width, height)
 
-    def show_plot(self, fname):
+    def show_plot(self, fname, cs = ['k', 'r']):
         self.canvas.ax.set_facecolor('xkcd:pinkish grey')
-        f = np.loadtxt(fname, str, delimiter = ',')
+        f = np.loadtxt(fname, str, delimiter = ',', usecols = (0, 1, 4))
         temp = np.array([float(elt) for elt in f[:, 1]])
         def format_time(t_str):
             words = str.split(t_str)
             return datetime.strptime(words[0] + " " + words[1], "%Y-%m-%d %H:%M:%S")
         ts = np.array([format_time(elt) for elt in f[:, 0]])
-        self.canvas.ax.plot(ts, temp, 'k')
+        
+        ks = np.array([int(elt) for elt in f[:, 2]])
+        k_set = np.unique(ks)
+        for j in np.arange(len(k_set)):
+            ixs = ks == k_set[j]
+            self.canvas.ax.plot(ts[ixs], temp[ixs], cs[j])
         self.canvas.draw()
         

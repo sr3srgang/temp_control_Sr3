@@ -78,7 +78,7 @@ class Keithley_mux():
         s.send(encoded)
         # print(f"\tSending to Keithley: {msg}")
         
-    def read_resistance(self):
+    def read_resistance(self, channel ='101'):
         # print(f"Attemp to read resistance...")
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1) # s 
@@ -87,15 +87,15 @@ class Keithley_mux():
         # Updated SCPI commands for CH101 on the 7701 multiplexer
         msgs = ([
             "*RST \n", 
-            "SENS:FUNC 'RES',(@101) \n",  # Set function to resistance on CH101
-            "SENS:RES:RANG 100000,(@101) \n",  # Set fixed range (100 kΩ)
-            "SENS:RES:NPLC 1,(@101) \n",  # Set integration time (faster)
-            "SENS:RES:OCOM OFF,(@101) \n",  # Offset compensation OFF (for 2-wire)
-            "ROUT:SCAN:CRE (@101) \n",  # Select channel 101 for scanning
+            "SENS:FUNC 'RES',(@{}) \n".format(channel),  # Set function to resistance on CH101
+            "SENS:RES:RANG 100000,(@{}) \n".format(channel),  # Set fixed range (100 kΩ)
+            "SENS:RES:NPLC 1,(@{}) \n".format(channel),  # Set integration time (faster)
+            "ROUT:SCAN (@{}) \n".format(channel),  # Set scan to channel 101 (fixed)
             "INIT \n",  # Start measurement
             "*WAI \n",
             "FETC? \n"  # Fetch the measured resistance
         ])
+
 
         for m in msgs:
             self.send_msg(s, m)
@@ -106,8 +106,8 @@ class Keithley_mux():
         # return float(s.recv(self.buffer_size))
         
         
-    def read_temp(self):
-        resistance = self.read_resistance()
+    def read_temp(self, channel = '101'):
+        resistance = self.read_resistance(channel)
         local_slope = 1/(-1.7e+3) #1 degree per 1.7 kOhm in neighborhood of 22C, 33 kOhm
         temp = (resistance-40.77e+3)*local_slope + 18 #44008RC thermistor
         return temp, resistance

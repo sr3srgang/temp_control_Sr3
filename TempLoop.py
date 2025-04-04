@@ -18,55 +18,67 @@ from Rigol import Rigol
 from influxdb_client import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+
 class TempLoop(QWidget):
-    def __init__(self, name, input_device:Union[Keithley, Keithley_mux], output_device:Rigol, PID_params):
+    def __init__(self, title_name, input_device:Union[Keithley, Keithley_mux], output_device:Rigol, PID_params, channels, names):
         super(TempLoop, self).__init__()
-        
+        self.il = 0 # loop iteration #
         self.input_device = input_device
         self.output_device = output_device
-        self.PID_params = PID_params
-        self.PID = PID(self.PID_params)
-        self.il = 0 # loop iteration #
+        self.all_PID_params = PID_params
+        self.n_loops = len(self.all_PID_params) #1
+        self.all_PID = [PID(ps) for ps in self.all_PID_params]
+        self.all_channels = channels
+        self.all_names = names
         
         # Joon added: set rigol output to 12V
         # so that `turn_on_rigol_12V.py` doesn't have to be run
         # self.output_device.set_val(12)
         
-        
-        self.setWindowTitle(name)
-                
-        self.setpoint_label = QLabel("Loop setpoint: {}".format(self.PID_params["setpoint"]))
-        self.temp_label = QLabel("Current temp: Not active")
-        self.voltage_label = QLabel("Rigol V: {}".format(self.PID_params["output_default"]))
-        self.time_label = QLabel("Time")
-        
-        #Adding option to open pop-up plot
-        self.plot_window = QPushButton(self)
-        self.plot_window.setText('Show plot')
-        self.plot_window.clicked.connect(self.make_window)
-        self.plot_window.move(250, 1)
-        
+        '''
+        #MM removed integrator clearing option-- we never use this.
         #Adding option to clear integrator
         self.integrator_clear = QPushButton(self)
         self.integrator_clear.setText('Clear int.')
         self.integrator_clear.clicked.connect(self.clear_integrator)
-        self.integrator_clear.move(250, 70)
+        self.integrator_clear.move(250, 70)'''
+        
+        self.setWindowTitle(title_name)
+        #Adding option to open pop-up plot
+        self.plot_window = QPushButton(self)
+        self.plot_window.setText('Show plot')
+        self.plot_window.clicked.connect(self.make_window)
+        #self.plot_window.move(250, 1)
         
         layout = QGridLayout()
+        #Adding text for each loop
+        self.setpoint_labels = []
+        self.temp_labels = []
+        self.voltage_labels = []
+        self.time_label = QLabel("Time")
         layout.addWidget(self.time_label, 0, 0)
-        layout.addWidget(self.setpoint_label, 1, 0)
-        layout.addWidget(self.temp_label, 1, 1)
-        layout.addWidget(self.voltage_label, 2, 0)
+        layout.addWidget(self.plot_window, 0, 1)
+        
+        for k in np.arange(self.n_loops):
+            self.setpoint_labels.append(QLabel("Loop setpoint: {}".format(self.all_PID_params[k]["setpoint"])))
+            self.temp_labels.append(QLabel("Current temp: Not active"))
+            self.voltage_labels.append(QLabel("Rigol V: {}".format(self.all_PID_params[k]["output_default"])))
+            
+            layout.addWidget(QLabel(self.all_names[k]), 2, k)
+            layout.addWidget(self.setpoint_labels[k], 3, k)
+            layout.addWidget(self.temp_labels[k], 4, k)
+            layout.addWidget(self.voltage_labels[k], 5, k)
+            
         self.setLayout(layout)
         
-        self.loop_time = self.PID_params["dt"]
+        #timer loop init
         self.timer = QTimer()
-        self.timer.timeout.connect(self.update_loop)
-        self.timer.start(self.loop_time * 1000)
-
+        self.timer.timeout.connect(self.update_all_loops)
+        self.timer.start(self.all_PID_params[0]["dt"]*1000)
         # Ensure first update happens immediately
-        QTimer.singleShot(100, self.update_loop)
-        
+        QTimer.singleShot(100, self.update_all_loops)
+            
+  
         #Setting up data log
         self.day = None
         self.f_path = None #"test_log_dev.txt"
@@ -91,33 +103,39 @@ class TempLoop(QWidget):
         self.pw = PlotWindow(fname_read)
         self.pw.show()
     
-    def clear_integrator(self):
-        self.PID.clear_integrator() 
-               
-    def update_loop(self):
+    #def clear_integrator(self):
+        #self.PID.clear_integrator() 
+        
+    def update_all_loops(self):
+        time = QDateTime.currentDateTime()
+        timeDisplay=time.toString('yyyy-MM-dd hh:mm:ss dddd')
+        self.time_label.setText(timeDisplay)
+        for k in np.arange(self.n_loops):
+    	    self.update_loop(k, time, timeDisplay)      
+    	     
+    def update_loop(self, k = 0, time = None, timeDisplay = None):
+        #"k" index now specifies which loop to update
+        print(k)
         try:
             #Read temp, update window, log. 
-            time = QDateTime.currentDateTime()
-            timeDisplay=time.toString('yyyy-MM-dd hh:mm:ss dddd')
-            self.time_label.setText(timeDisplay)
-            
+            ch = self.all_channels[k]
             #Read in value from Keithley,
             try:
-                current_temp, res = self.input_device.read_temp()
+                current_temp, res = self.input_device.read_temp(channel = ch["input_ch"])
             except Exception as ex:
                 print("Get Keithley temp reading failed.", file=sys.stderr)
                 print(traceback.format_exception(), file=sys.stderr)
                 return
-            self.temp_label.setText("Current temp: {:.3f}".format(current_temp))
-            
+            self.temp_labels[k].setText("Current temp @ {}: {:.3f}".format(ch["input_ch"], current_temp))
+            print(current_temp)
             #Log temp and output
             print(f"[{time.toString('MM/dd hh:mm:ss')}] {self.il}: [P,I,D]=", end="")
-            output = self.PID.update(current_temp)
+            output = self.all_PID[k].update(current_temp)
             f_path = self.get_fname_write(time)
             
             #To actuate:
             try:
-                self.output_device.set_val(output)
+                self.output_device.set_val(output, channel = ch["output_ch"])
             except Exception as ex:
                 print("Set RIGOL output voltage failed.", file=sys.stderr)
                 print(traceback.format_exception(), file=sys.stderr)
@@ -126,7 +144,7 @@ class TempLoop(QWidget):
             # write log to file
             try:
                 with open(f_path, 'a') as f:
-                    f.write("{}, {}, {}, {}\n".format(timeDisplay, current_temp, res, output))
+                    f.write("{}, {}, {}, {}, {}\n".format(timeDisplay, current_temp, res, output, k))
             except Exception as ex:
                 print("Writing log to file faield.", file=sys.stderr)
                 print(traceback.format_exception(), file=sys.stderr) 
@@ -141,7 +159,7 @@ class TempLoop(QWidget):
                 print(traceback.format_exception(), file=sys.stderr)
             
 
-            self.voltage_label.setText("Rigol V: {:.3f}".format(output))
+            self.voltage_labels[k].setText("Rigol Ch {} V: {:.3f}".format(ch["output_ch"], output))
         except Exception as ex:
             print("Unhandled exception raised. Dropping this iteration.", file=sys.stderr)
             print(traceback.format_exception(), file=sys.stderr)
