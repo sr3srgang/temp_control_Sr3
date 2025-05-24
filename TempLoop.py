@@ -11,7 +11,6 @@ import traceback
 
 # for typing
 from typing import Union
-from Keithley import Keithley, Keithley_mux
 from Rigol import Rigol
 
 # libraries for data uploading
@@ -20,7 +19,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 
 class TempLoop(QWidget):
-    def __init__(self, title_name, input_device:Union[Keithley, Keithley_mux], output_device:Rigol, PID_params, channels, names):
+    def __init__(self, title_name, input_device, output_device:Rigol, PID_params, channels, names):
         super(TempLoop, self).__init__()
         self.il = 0 # loop iteration #
         self.input_device = input_device
@@ -111,8 +110,8 @@ class TempLoop(QWidget):
         timeDisplay=time.toString('yyyy-MM-dd hh:mm:ss dddd')
         self.time_label.setText(timeDisplay)
         for k in np.arange(self.n_loops):
-    	    self.update_loop(k, time, timeDisplay)      
-    	     
+            self.update_loop(k, time, timeDisplay)      
+             
     def update_loop(self, k = 0, time = None, timeDisplay = None):
         #"k" index now specifies which loop to update
         print(k)
