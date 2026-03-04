@@ -60,7 +60,7 @@ class Keithley_mux():
         print(f"Test connection to Keithley: {ip_address}:{port}...")
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(1) # s 
+            #s.settimeout(1) # s 
             s.connect((self.ip_address, self.port))
             self.send_msg(s, "*IDN?\n")
             response = s.recv(self.buffer_size)
@@ -98,17 +98,26 @@ class Keithley_mux():
 
 
         for m in msgs:
-            self.send_msg(s, m)
-
-        msg_recv = s.recv(self.buffer_size)
-        # print(f"\tRecieved from Keithley: {msg_recv}")
-        return float(msg_recv)
+            try:
+                self.send_msg(s, m)
+            except:
+            	print(m, 'message send failure')
+        try:
+            msg_recv = s.recv(self.buffer_size)
+            # print(f"\tRecieved from Keithley: {msg_recv}")
+            return float(msg_recv)
+        except:
+            print('message receive failure ', channel)
+            return None
         # return float(s.recv(self.buffer_size))
         
         
     def read_temp(self, channel = '101'):
         resistance = self.read_resistance(channel)
-        local_slope = 1/(-1.7e+3) #1 degree per 1.7 kOhm in neighborhood of 22C, 33 kOhm
-        temp = (resistance-40.77e+3)*local_slope + 18 #44008RC thermistor
+        if resistance is not None:
+            local_slope = 1/(-1.7e+3) #1 degree per 1.7 kOhm in neighborhood of 22C, 33 kOhm
+            temp = (resistance-40.77e+3)*local_slope + 18 #44008RC thermistor
+        else:
+            temp = None
         return temp, resistance
 

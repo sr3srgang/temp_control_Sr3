@@ -121,26 +121,31 @@ class TempLoop(QWidget):
             #Read in value from Keithley,
             try:
                 current_temp, res = self.input_device.read_temp(channel = ch["input_ch"])
-            except Exception as ex:
+                self.temp_labels[k].setText("Current temp @ {}: {:.3f}".format(ch["input_ch"], current_temp))
+            except:
                 print("Get Keithley temp reading failed.", file=sys.stderr)
-                print(traceback.format_exception(), file=sys.stderr)
+                self.temp_labels[k].setText("Current temp @ {}: FAIL".format(ch["input_ch"]))
+                self.temp_labels[k].setStyleSheet("color: red;")
+                #print(traceback.format_exception(), file=sys.stderr)
                 return
-            self.temp_labels[k].setText("Current temp @ {}: {:.3f}".format(ch["input_ch"], current_temp))
-            print(current_temp)
-            #Log temp and output
-            print(f"[{time.toString('MM/dd hh:mm:ss')}] {self.il}: [P,I,D]=", end="")
-            output = self.all_PID[k].update(current_temp)
-            f_path = self.get_fname_write(time)
             
-            #To actuate:
-            try:
-                self.output_device.set_val(output, channel = ch["output_ch"])
-            except Exception as ex:
-                print("Set RIGOL output voltage failed.", file=sys.stderr)
-                print(traceback.format_exception(), file=sys.stderr)
-                return
+            print(current_temp)
+            print(f"[{time.toString('MM/dd hh:mm:ss')}] {self.il}: [P,I,D]=", end="")
+            
+            if current_temp is not None:
+            	output = self.all_PID[k].update(current_temp)
+            	#To actuate:
+            	try:
+            	    self.output_device.set_val(output, channel = ch["output_ch"])
+            	except Exception as ex:
+            	    print("Set RIGOL output voltage failed.", file=sys.stderr)
+            	    print(traceback.format_exception(), file=sys.stderr)
+		    #return
+            else:
+                output = None
                 
             # write log to file
+            f_path = self.get_fname_write(time)
             try:
                 with open(f_path, 'a') as f:
                     f.write("{}, {}, {}, {}, {}\n".format(timeDisplay, current_temp, res, output, k))
@@ -159,7 +164,8 @@ class TempLoop(QWidget):
                     "Output[V]": output,
                 }
             }
-            
+            '''
+            #MM 20251013: removing this computer from the JILA network
             try:
                 with InfluxDBClient(url="http://yesnuffleupagus.colorado.edu:8086", token="yelabtoken", org="yelab", debug=False) as client:
                     write_api = client.write_api(write_options=SYNCHRONOUS)
@@ -168,8 +174,7 @@ class TempLoop(QWidget):
             except Exception as ex:
                 print("InfluxDB uploading failed.", file=sys.stderr)
                 print(traceback.format_exception(), file=sys.stderr)
-            
-
+            '''
             self.voltage_labels[k].setText("Rigol Ch {} V: {:.3f}".format(ch["output_ch"], output))
         except Exception as ex:
             print("Unhandled exception raised. Dropping this iteration.", file=sys.stderr)
